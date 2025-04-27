@@ -474,11 +474,21 @@ sequenceDiagram
 
 ## 1、rabbitMQ介绍
 
-
+轻量级消息队列系统
 
 ## 2、rocketMQ理解
 
+百万级
+
 ## 3、kafaka应用
+
+千万级
+
+### 3-1 
+
+### 3-2
+
+### 3-3
 
 ## 4、MQTT协议
 
