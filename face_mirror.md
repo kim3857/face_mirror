@@ -189,7 +189,7 @@ applicationcontext继承了beanFactory根接口，并且扩展了国际化、监
    - XML中配置的`destroy-method`
 
 ```mermaid
-graph TD
+graph LR
     A[加载Bean定义] --> B[实例化]
     B --> C[属性填充/DI]
     C --> D[Aware接口注入]
@@ -257,7 +257,7 @@ graph TD
 
 
 ```mermaid
-graph TD
+graph LR
     A1[开始创建A] --> A2[实例化A对象]
     A2 --> A3[将A的ObjectFactory放入三级缓存]
     A3 --> A4[发现需注入B]
