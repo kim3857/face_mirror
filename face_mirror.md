@@ -1234,6 +1234,23 @@ F --> P
 fff
 ```
 
+#### 1-1-2 快排
+
+```java
+public calss Main{
+		public static void main(){
+      int [] arr = {1,4,7,3,9,4,7,5,0};
+      qucitSort(arr,0,arr.length-1);
+    }
+  public static void quickSort(int[] arr,int left,int right){
+    
+  }
+  public static int partition(int [] arr,int left,int right){
+    
+  }
+}
+```
+
 
 
 ### 1-2、插入类
@@ -1249,6 +1266,370 @@ fff
 ## 3、
 
 # 十、大数据时代
+
+## 1 
+
+## 2 常用大数据采集处理一体化
+
+
+
+```mermaid
+%% 大数据架构图（Mermaid 绘制）
+flowchart TD
+    %% ========== 数据采集层 ==========
+    subgraph 数据采集层
+        A[移动App/Web] -->|HTTP/日志| B[Flume/Nginx]
+        C[IoT设备] -->|MQTT/传感器数据| D[Kafka Producer]
+        E[数据库] -->|CDC日志| F[Debezium]
+        B & D & F --> G[Kafka Cluster]
+    end
+
+    %% ========== 数据处理层 ==========
+    subgraph 计算层
+        G -->|实时流| H[Flink Streaming]
+        G -->|批量数据| I[Flink Batch]
+        H --> J[窗口聚合/CEP]
+        I --> K[ETL/Join]
+    end
+
+    %% ========== 数据存储层 ==========
+    subgraph 存储层
+        J & K --> L[(HDFS/对象存储)]
+        L --> M[Delta Lake/Iceberg]
+        M --> N[数据湖元数据]
+        L --> O[HBase/ClickHouse]
+    end
+
+    %% ========== 数据服务层 ==========
+    subgraph 应用层
+        O & M --> P[API服务]
+        P --> Q[BI工具\nTableau/Superset]
+        P --> R[实时大屏]
+        P --> S[推荐系统]
+    end
+
+    %% ========== 资源管理层 ==========
+    subgraph 资源管理层
+        T[YARN/K8s] -->|资源调度| H & I
+        U[Prometheus] -->|监控| G & H & T
+    end
+
+```
+
+
+
+### **架构关键组件说明**‌
+
+1. ‌**数据采集层**‌
+   - ‌**Kafka**‌ 作为统一入口，接收来自 Flume（日志）、MQTT（IoT）、Debezium（数据库变更）的数据
+   - 支持 ‌**流式**‌（实时）和 ‌**批量**‌（离线）两种摄入模式
+2. ‌**计算层**‌
+   - ‌**Flink Streaming**‌：处理实时数据（如风控、监控告警）
+   - ‌**Flink Batch**‌：离线 ETL、数据清洗
+   - 典型操作：窗口聚合、复杂事件处理（CEP）、多流 Join
+3. ‌**存储层**‌
+   - ‌**数据湖**‌（Delta Lake/Iceberg）：存储原始数据 + 结构化表
+   - ‌**OLAP引擎**‌（ClickHouse/HBase）：支持高性能查询
+   - ‌**元数据管理**‌：统一管理表结构、分区、版本
+4. ‌**应用层**‌
+   - 通过 ‌**REST API**‌ 对外提供数据服务
+   - 支撑 BI 分析、实时大屏、推荐系统等场景
+5. ‌**资源管理层**‌
+   - ‌**YARN/K8s**‌：统一调度 Flink/Spark 计算资源
+   - ‌**Prometheus**‌：监控 Kafka/Flink 的吞吐量、延迟等指标
+
+------
+
+### ‌**技术栈扩展建议**‌
+
+- ‌**实时数仓**‌：用 Kafka + Flink + Hudi 构建 Lambda 架构
+- ‌**数据治理**‌：集成 Apache Atlas 管理数据血缘
+- ‌**机器学习**‌：在 Flink 中嵌入 TensorFlow/PyTorch 模型
+
+
+
+## 3 Kafka 集群拓扑详细架构图
+
+```mermaid
+%% Kafka集群拓扑架构（Mermaid绘制）
+flowchart TD
+    %% ========== 生产者层 ==========
+    subgraph 生产者层
+        A[Web服务] -->|异步写入| B[Kafka Producer]
+        C[IoT设备] -->|MQTT网关| B
+        D[数据库CDC] -->|Debezium| B
+    end
+
+    %% ========== Kafka集群核心 ==========
+    subgraph Kafka集群
+        subgraph Broker1
+            E[Leader Partition P0] -->|副本同步| F[Follower Partition P0]
+            G[Leader Partition P1] -->|副本同步| H[Follower Partition P1]
+        end
+
+        subgraph Broker2
+            I[Leader Partition P1] -->|副本同步| J[Follower Partition P1]
+            K[Leader Partition P2] -->|副本同步| L[Follower Partition P2]
+        end
+
+        subgraph Broker3
+            M[Leader Partition P2] -->|副本同步| N[Follower Partition P0]
+            O[Leader Partition P0] -->|副本同步| P[Follower Partition P2]
+        end
+    end
+
+    %% ========== 消费者层 ==========
+    subgraph 消费者组1
+        Q[Flink Worker1] -->|消费P0| E
+        R[Flink Worker2] -->|消费P1| G
+    end
+
+    subgraph 消费者组2
+        S[Spark Worker] -->|消费P2| K
+    end
+
+    %% ========== 协调服务 ==========
+    Z[ZooKeeper集群] -->|选举Controller| Broker1
+    Z -->|存储元数据| Broker2
+    Z -->|监控状态| Broker3
+
+    %% ========== 数据流向说明 ==========
+    B -->|发布消息| Broker1 & Broker2 & Broker3
+    style B stroke:#ff0000,stroke-width:2px
+    style Q stroke:#0000ff,stroke-width:2px
+    style S stroke:#0000ff,stroke-width:2px
+
+```
+
+### **核心组件说明**‌
+
+1. ‌**Broker 节点**‌
+   - 每个 Broker 包含多个 ‌**Partition（分区）**‌，分区分为 Leader（处理读写）和 Follower（副本）
+   - 示例中展示 3 个 Broker 的副本分布（通过 `replication-factor=3` 实现高可用）
+2. ‌**生产者/消费者**‌
+   - ‌**生产者**‌：通过 `acks=all` 参数确保消息写入所有副本
+   - ‌**消费者组**‌：不同组可重复消费，同组内分区分配给不同 Worker 实现并行
+3. ‌**ZooKeeper 作用**‌
+   - 管理 Broker 注册、Leader 选举（Kafka 3.0+ 可逐步替换为 KRaft 模式）
+   - 存储 Topic/Partition 元数据（如 `__consumer_offsets`）
+4. ‌**副本同步机制**‌
+   - 绿色箭头表示 ISR（In-Sync Replicas）同步复制
+   - 故障时自动切换 Leader（如 Broker1 宕机，P0 的 Follower 晋升为 Leader）
+
+------
+
+### ‌**关键配置参数**‌
+
+| 参数                             | 说明                      | 推荐值              |
+| -------------------------------- | ------------------------- | ------------------- |
+| `num.partitions`                 | 每个 Topic 的分区数       | ≥消费者并行度       |
+| `default.replication.factor`     | 副本数                    | 3（生产环境）       |
+| `min.insync.replicas`            | 最小同步副本数            | 2（保证可用性）     |
+| `unclean.leader.election.enable` | 允许不同步副本成为 Leader | false（防数据丢失） |
+
+------
+
+### ‌**扩展场景**‌
+
+1. ‌跨机房部署
+
+   ```mermaid
+   flowchart LR
+       A[生产者] -->|就近写入| B[本地Kafka集群]
+       B -->|MirrorMaker2| C[异地灾备集群]
+   ```
+
+2. ‌Flink 精确一次消费
+
+   ```java
+   // 启用Checkpoint并配置Kafka偏移量提交
+   env.enableCheckpointing(5000);
+   props.setProperty("isolation.level", "read_committed");
+   ```
+
+## 4 Flink 作业链
+
+以下是关于 ‌**Flink 作业链（Operator Chain）**‌ 的详细解析，综合了执行原理、优化机制及配置方法：
+
+------
+
+### ‌**1. 作业链的核心概念**‌
+
+- ‌**定义**‌：Flink 会将多个算子（Operator）链接（Chain）成一个 ‌**Task Pipeline**‌，在同一个线程中执行，减少线程切换和网络序列化开销。
+- ‌条件：
+  - 算子间为 ‌**One-to-One**‌ 数据传输（如 `map`→`filter`）。
+  - 并行度相同且未禁用链化。
+- ‌**优化目标**‌：提升吞吐量，降低延迟。
+
+------
+
+### ‌**2. 作业链的生成流程**‌
+
+Flink 执行图的转换过程中，作业链在 ‌**StreamGraph → JobGraph**‌ 阶段生成：
+
+1. ‌**StreamGraph**‌：用户代码初始生成的逻辑拓扑，每个算子独立。
+2. ‌JobGraph‌：
+   - 合并符合条件的算子为 ‌**Operator Chain**‌（如 `Source`→`Map`→`Filter`）。
+   - 每个 Chain 对应一个 ‌**Task**‌，由同一线程执行。
+
+```mermaid
+%% Flink作业链生成示例（Mermaid绘制）
+flowchart LR
+    A[Source] --> B[Map] --> C[Filter] --> D[Sink]
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#bbf,stroke:#333
+    style D fill:#f9f,stroke:#333
+```
+
+（虚线框内为合并后的 Task6）
+
+------
+
+### ‌**3. 关键配置与调优**‌
+
+| ‌**配置项**‌                   | ‌**作用**‌                             | ‌**示例/建议**‌                |
+| ---------------------------- | ------------------------------------ | ---------------------------- |
+| `pipeline.operator-chaining` | 全局启用/禁用链化                    | `true`（默认）               |
+| `disableOperatorChaining()`  | 代码中禁用特定算子的链化             | `map(...).disableChaining()` |
+| `slotSharingGroup`           | 设置槽共享组，影响链内算子的资源分配 | `slotSharingGroup("groupA")` |
+
+------
+
+### ‌**4. 与资源调度的关系**‌
+
+- ‌**Slot 共享**‌：同一作业链的算子默认共享 ‌**Slot 共享组**‌，避免跨节点通信。
+- ‌**资源隔离**‌：通过 `slotSharingGroup` 强制拆分链，实现 CPU/内存隔离。
+
+------
+
+### ‌5. 常见问题‌
+
+- ‌**性能下降**‌：链过长可能导致线程阻塞，需通过 `disableChaining` 拆分。
+- ‌**调试工具**‌：通过 Flink WebUI 查看 ‌**Operator Chain**‌ 可视化效果
+
+## 5 HDFS存储原始数据 → HBase提供实时查询接口‌？
+
+以下是 ‌**HDFS 数据导入 HBase 实现实时查询**‌ 的完整方案，涵盖关键步骤、技术实现及优化建议：
+
+------
+
+### ‌**1. 数据准备与格式转换**‌
+
+- ‌**HDFS 数据要求**‌
+  确保原始数据包含 ‌**RowKey 设计**‌（如用户ID、时间戳等唯一标识），这是 HBase 高效查询的基础。
+
+  - 若数据无明确 RowKey，需通过预处理生成（如 MD5 哈希或复合键）。
+
+- ‌**格式转换工具**‌
+
+  - ‌HBase BulkLoad：将 HDFS 数据转换为 HFile 格式（HBase 底层存储格式），避免直接写入的性能开销。
+
+    ```bash
+    # 示例：使用 MapReduce 生成 HFile
+    hadoop jar hbase-mapreduce.jar importtsv \
+      -Dimporttsv.columns=HBASE_ROW_KEY,cf:col1,cf:col2 \
+      -Dimporttsv.bulk.output=/hfile_output_path \
+      my_table /hdfs/input_path
+    ```
+
+------
+
+### ‌**2. 数据导入 HBase**‌
+
+#### ‌**方法一：BulkLoad（高吞吐）**‌
+
+1. ‌**生成 HFile**‌：通过 `ImportTsv` 或自定义 MapReduce 作业转换数据。
+
+2. ‌加载至 HBase‌：
+
+   ```bash
+   hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles /hfile_output_path my_table
+   ```
+
+   优势：绕过 RegionServer 直接写 HDFS，适合海量数据初始化导入。
+
+#### ‌**方法二：API 写入（实时增量）**‌
+
+- 通过 ‌HBase Java API
+
+  ‌ 逐行写入：
+
+  ```java
+  // 示例：Put 操作写入单行数据
+  Table table = connection.getTable(TableName.valueOf("my_table"));
+  Put put = new Put(Bytes.toBytes("row1"));
+  put.addColumn(Bytes.toBytes("cf"), Bytes.toBytes("col1"), Bytes.toBytes("value1"));
+  table.put(put);
+  ```
+
+  适用场景：小规模实时数据同步。
+
+------
+
+### ‌**3. 实时查询优化**‌
+
+- ‌**RowKey 设计**‌
+
+  - ‌**散列化**‌：避免热点问题（如时间戳前缀加盐）。
+  - ‌**范围查询优化**‌：按查询频率排序（如用户ID+时间戳）。
+
+- ‌**索引与缓存**‌
+
+  - ‌**Bloom Filter**‌：加速 RowKey 存在性判断，减少磁盘 IO。
+  - ‌**Block Cache**‌：缓存频繁访问的数据块。
+
+- ‌**预分区（Pre-splitting）**‌
+  建表时按 RowKey 范围预分区，避免后期自动分裂导致的性能波动：
+
+  ```
+  create 'my_table', {NAME => 'cf'}, {SPLITS => ['a', 'm', 'z']}
+  ```
+
+------
+
+### ‌**4. 验证与监控**‌
+
+- ‌数据一致性检查
+
+  通过 HBase Shell 或 API 抽样查询，对比 HDFS 原始数据：
+
+  ```
+  scan 'my_table', {LIMIT => 10}
+  ```
+
+- ‌性能监控
+
+  - ‌**HBase Metrics**‌：关注 `RegionServer` 的读写延迟及 MemStore 使用情况。
+  - ‌**HDFS 吞吐量**‌：监控 BulkLoad 期间的 HDFS 带宽占用。
+
+------
+
+### ‌**5. 典型问题解决**‌
+
+- ‌**热点问题**‌：通过 ‌**Salting**‌ 或 ‌**Hash RowKey**‌ 分散写入压力。
+- ‌**BulkLoad 失败**‌：检查 HFile 权限及 RegionServer 状态。
+
+------
+
+### ‌**总结流程**‌
+
+```mermaid
+graph LR
+A[HDFS 原始数据] --> B{RowKey 设计}
+B --> C[BulkLoad 生成 HFile]
+B --> D[API 实时写入]
+C --> E[加载至 HBase]
+D --> E
+E --> F[实时查询优化]
+F --> G[监控与调优]
+```
+
+通过上述步骤，可实现 ‌**HDFS 冷数据**‌与 ‌**HBase 热查询**‌的高效协同。
+
+
+
+
 
 
 ## 附上
