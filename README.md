@@ -1,23 +1,68 @@
-# face_mirror
-
-本仓库汇总了 Java 后端工程师核心知识体系，覆盖 Java 基础、并发编程、JVM、常用框架、数据库、微服务、分布式系统、消息中间件、DevOps 等方向，适合日常复习与系统性学习。
+<h1 align="center">🪞 Face-Mirror · 面镜</h1>
+<p align="center">一面照出知识短板与能力盲区的“照妖镜”，系统整理后端核心技术，助你升职加薪不再迷茫。</p>
 
 ---
 
-## 📚 目录
+## 📚 项目介绍
 
-1. [Java 基础](#java-基础)
-2. [集合与数据结构](#集合与数据结构)
-3. [并发编程](#并发编程)
-4. [JVM 虚拟机](#jvm-虚拟机)
-5. [常用框架](#常用框架)
-6. [数据库](#数据库)
-7. [Spring 全家桶](#spring-全家桶)
-8. [微服务架构](#微服务架构)
-9. [中间件](#中间件)
-10. [系统设计与分布式](#系统设计与分布式)
-11. [DevOps 与运维](#devops-与运维)
-12. [面试题精选](#面试题精选)
+> **“不是面经，而是一面镜子。”**
+
+在浩瀚如海的技术世界中，作为一名后端开发者，我们每天都在面对一个终极难题——如何系统地学习，如何高效地进阶。而“面镜”，正是为了解决这个痛点而诞生的。
+
+这是我自己的“照妖镜”，一面能照出自身短板与知识死角的镜子，也是一个为所有程序员朋友准备的免费、开源的知识体系整理项目。在这里，没有东拼西凑的碎片化内容，也不需要付费订阅，所有内容全都开放，持续更新。
+
+**面镜** 涵盖后端开发核心技能，包括但不限于 Java、Spring、MySQL、Redis、消息队列、分布式、微服务、系统设计、安全与性能优化等内容，力求打造一站式技术导航图谱，帮助你从容应对工作挑战、技术面试，乃至职场晋升。
+
+希望这面镜子不仅能帮助我自身精进，也能为每一位在技术之路上跋涉的你，点亮前行的方向。
+
+内容如有疏漏或错误之处，欢迎大家批正指教。
+
+---
+
+## 🧭 目录导航
+
+| 分类                                         | 描述                                 |
+| -------------------------------------------- | ------------------------------------ |
+| 🧠 [Java 基础](docs/java/README.md)           | 语法、集合、JVM、并发                |
+| 🧱 [计算机基础](docs/cs/README.md)            | 操作系统、网络、数据结构             |
+| 🌐 [Web 后端框架](docs/frameworks/README.md)  | Spring 全家桶、MyBatis、Servlet      |
+| ⚙️ [微服务架构](docs/microservices/README.md) | Spring Cloud、Dubbo、Nacos、Sentinel |
+| 🚀 [高性能中间件](docs/middleware/README.md)  | Redis、Kafka、RabbitMQ、ES           |
+| 📦 [数据库](docs/db/README.md)                | MySQL、SQL优化、事务、索引           |
+| 🔧 [DevOps 与运维](docs/devops/README.md)     | Docker、K8s、CI/CD、监控告警         |
+| 🧪 [系统设计与架构](docs/design/README.md)    | 常用架构图、系统拆分、高可用         |
+| 🛡️ [安全与认证](docs/security/README.md)      | 登录鉴权、XSS、JWT、HTTPS            |
+| 📈 [面试专题](docs/interview/README.md)       | 常见八股文、系统设计题、行为面       |
+
+---
+
+## 🧩 项目结构梳理
+
+```bash
+face-mirror/
+├── docs/                      # 所有文档资料
+│   ├── java/                  # Java基础、JVM、并发
+│   ├── cs/                    # 操作系统、网络等计算机基础
+│   ├── frameworks/            # Spring Boot, MyBatis 等
+│   ├── microservices/         # 微服务相关
+│   ├── middleware/            # Redis, MQ, ES 等
+│   ├── db/                    # MySQL 等数据库相关
+│   ├── devops/                # Docker, K8s 等部署运维
+│   ├── design/                # 系统设计
+│   ├── security/              # 安全相关
+│   └── interview/             # 面试相关内容
+├── assets/                    # 图片资源、架构图
+└── README.md                  # 项目介绍
+```
+
+## 🔖 特色亮点
+
+- ✅ 全部免费开源，拒绝付费割韭菜
+- 🧩 模块清晰分类，查漏补缺效率高
+- 🧠 包含原理讲解 + 实战案例 + 面试准备
+- 🛠️ 持续更新维护中，欢迎提 Issue/PR
+
+1. ](#面试题精选)
 
 ---
 
@@ -151,7 +196,24 @@
 ## 📮 联系我
 
 如需获取详细笔记或面试题答案，可联系：
+
 - 📧 邮箱：tonyliu1314521@gmail.com
 - 📦 GitHub: https://github.com/kim3857/face_mirror.git
 - 📦 Gitee: https://gitee.com/mr_tony/face_mirror.git
 - 📦 Gitcode: https://gitcode.com/gcw_fDRVFVXe/face_mirror.git
+
+## 🫶 支持与反馈
+
+- 📌 欢迎 Star 🌟 收藏支持
+- 🧵 有问题欢迎提 [Issues](https://github.com/你的项目/issues)
+- 💬 加入我们，一起完善这面“面镜”
+
+------
+
+## ⭐ 致谢
+
+感谢所有为这个项目提出建议或贡献内容的朋友。
+ 希望这面镜子，不仅能照亮我自己，也能照亮你前行的方向。
+
+
+
