@@ -1,87 +1,187 @@
-- # 🗄 数据库模块（Database）
+# 数据库技术指南
 
-  数据库是后端系统中数据存储、查询、事务控制的核心组件。本模块覆盖主流数据库技术，包括关系型数据库、非关系型数据库，以及分布式数据库架构、性能优化等。
+![MySQL](https://img.shields.io/badge/MySQL-8.0-blue)
+![Redis](https://img.shields.io/badge/Redis-7.0-red)
+![MongoDB](https://img.shields.io/badge/MongoDB-6.0-green)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue)
 
-  ---
+## 📋 目录
+- [项目概述](#项目概述)
+- [关系型数据库](#关系型数据库)
+- [非关系型数据库](#非关系型数据库)
+- [数据库架构](#数据库架构)
+- [性能优化](#性能优化)
+- [高可用方案](#高可用方案)
+- [数据迁移](#数据迁移)
+- [监控告警](#监控告警)
+- [资源推荐](#资源推荐)
+- [贡献指南](#贡献指南)
 
-  ## 📚 模块结构与技术栈
+## 🎯 项目概述
 
-  ### 🔹 1. 关系型数据库（RDBMS）
+本模块系统总结了数据库技术的核心知识与最佳实践，旨在帮助开发者：
 
-  关系型数据库强调**结构化数据**与**事务一致性（ACID）**，适用于强一致需求的业务场景。
+- 深入理解各类数据库的核心原理
+- 掌握数据库性能优化技巧
+- 构建高可用、可扩展的数据库架构
+- 解决实际业务场景中的数据库挑战
+- 提升数据库运维与管理能力
 
-  | 数据库         | 说明                                            |
-  | -------------- | ----------------------------------------------- |
-  | **MySQL**      | 最常用的开源关系型数据库，支持丰富引擎如 InnoDB |
-  | **PostgreSQL** | 强一致性、功能强大，支持复杂 SQL 和 GIS 数据    |
-  | **Oracle**     | 企业级数据库代表，强事务与高可靠性支持          |
-  | **SQL Server** | 微软出品，适用于.NET生态                        |
-  | **MariaDB**    | MySQL的分支版本，提供更多企业级特性             |
+## 💾 关系型数据库
 
-  📄 文档示例：
+### MySQL
+- [核心原理](./mysql/core-principle.md)
+  - 存储引擎
+  - 事务机制
+  - 锁机制
+- [性能优化](./mysql/performance-optimization.md)
+  - 索引优化
+  - SQL 优化
+  - 配置优化
+- [高可用方案](./mysql/ha-solutions.md)
+  - 主从复制
+  - 读写分离
+  - 分库分表
 
-  - `mysql/索引优化与查询性能.md`
-  - `postgresql/MVCC与隔离级别.md`
-  - `oracle/存储过程与事务管理.md`
+### PostgreSQL
+- [特性详解](./postgresql/features.md)
+  - MVCC 机制
+  - 表空间
+  - 分区表
+- [性能调优](./postgresql/performance-tuning.md)
+  - 查询优化
+  - 参数配置
+  - 索引策略
 
-  ---
+## 🔄 非关系型数据库
 
-  ### 🔸 2. 非关系型数据库（NoSQL）
+### Redis
+- [核心原理](./redis/core-principle.md)
+  - 数据结构
+  - 持久化机制
+  - 集群模式
+- [应用实践](./redis/practices.md)
+  - 缓存设计
+  - 分布式锁
+  - 消息队列
 
-  NoSQL 强调**灵活的数据模型**、**高性能读写**与**横向扩展性**，适合缓存、大数据、高并发场景。
+### MongoDB
+- [架构设计](./mongodb/architecture.md)
+  - 副本集
+  - 分片集群
+  - 数据模型
+- [性能优化](./mongodb/performance.md)
+  - 索引设计
+  - 查询优化
+  - 存储优化
 
-  | 数据库            | 类型     | 说明                                               |
-  | ----------------- | -------- | -------------------------------------------------- |
-  | **Redis**         | 键值型   | 高性能缓存、中间件、队列（支持持久化）             |
-  | **MongoDB**       | 文档型   | JSON 文档结构，适合快速开发、半结构化数据          |
-  | **Elasticsearch** | 搜索型   | 分布式全文检索引擎，支持日志、商品搜索、日志分析等 |
-  | **Cassandra**     | 列族型   | 高可用、高扩展、适用于写多读少的分布式系统         |
-  | **HBase**         | 列族型   | 构建在 Hadoop 之上的大数据存储系统                 |
-  | **Neo4j**         | 图数据库 | 专用于图结构、社交网络等复杂关系查询               |
+### Elasticsearch
+- [核心概念](./elasticsearch/core-concepts.md)
+  - 倒排索引
+  - 分词器
+  - 评分机制
+- [集群管理](./elasticsearch/cluster.md)
+  - 节点类型
+  - 分片策略
+  - 数据备份
 
-  📄 文档示例：
+## 🏗 数据库架构
 
-  - `redis/主从复制与持久化机制.md`
-  - `mongodb/聚合查询与分片设计.md`
-  - `es/搜索原理与倒排索引.md`
+### 分库分表
+- [设计原则](./architecture/sharding-principles.md)
+  - 分片策略
+  - 路由规则
+  - 扩容方案
+- [中间件选型](./architecture/middleware.md)
+  - ShardingSphere
+  - MyCat
+  - Vitess
 
-  ---
+### 读写分离
+- [实现方案](./architecture/read-write-split.md)
+  - 主从复制
+  - 负载均衡
+  - 数据同步
 
-  ### 🧱 3. 数据库架构设计与中间件
+## ⚡ 性能优化
 
-  | 组件/技术              | 说明                                  |
-  | ---------------------- | ------------------------------------- |
-  | **分库分表设计**       | 提高读写性能，适应海量数据业务        |
-  | **读写分离**           | 提高并发与容灾能力，主库写从库读      |
-  | **数据库中间件**       | 如 ShardingSphere、MyCat 实现透明分片 |
-  | **数据同步与迁移工具** | 如 Canal、DataX、DTS、Debezium        |
-  | **数据库连接池**       | 如 Druid、HikariCP 提升数据库连接效率 |
+### 查询优化
+- [索引优化](./performance/index-optimization.md)
+  - 索引类型
+  - 索引设计
+  - 索引维护
+- [SQL 优化](./performance/sql-optimization.md)
+  - 执行计划
+  - 慢查询分析
+  - 优化技巧
 
-  📄 文档示例：
+### 配置优化
+- [参数调优](./performance/parameter-tuning.md)
+  - 内存配置
+  - 连接池配置
+  - 缓存配置
 
-  - `design/分库分表策略实践.md`
-  - `design/一致性设计与补偿机制.md`
-  - `middleware/ShardingSphere使用示例.md`
+## 🔄 高可用方案
 
-  ---
+### 主从复制
+- [复制原理](./ha/replication.md)
+  - 复制模式
+  - 数据同步
+  - 故障转移
 
-  ## 🧭 推荐学习路径
+### 集群方案
+- [集群架构](./ha/cluster.md)
+  - 集群模式
+  - 数据分片
+  - 故障恢复
 
-  1. **入门**：掌握 MySQL、Redis 基础与使用；
-  2. **进阶**：理解事务隔离级别、索引优化、主从复制；
-  3. **架构**：掌握分库分表、NoSQL 选型与中间件接入；
-  4. **实战**：结合微服务、缓存、消息队列设计高可用数据库系统。
+## 📦 数据迁移
 
-  ---
+### 迁移方案
+- [迁移工具](./migration/tools.md)
+  - DataX
+  - Canal
+  - Debezium
+- [迁移策略](./migration/strategies.md)
+  - 全量迁移
+  - 增量迁移
+  - 数据校验
 
-  ## 📖 推荐资料
+## 📊 监控告警
 
-  - 《高性能 MySQL》
-  - 《Redis 深度历险》
-  - 《Elasticsearch 权威指南》
-  - 《数据库系统概论》
-  - MongoDB / PostgreSQL / Cassandra 官方文档
+### 监控指标
+- [性能监控](./monitoring/performance.md)
+  - 资源监控
+  - 性能指标
+  - 慢查询监控
+- [告警配置](./monitoring/alerts.md)
+  - 告警规则
+  - 告警通知
+  - 告警处理
 
-  ---
+## 📚 资源推荐
 
-  📬 有建议欢迎提 Issue 或提交 PR，一起完善知识镜像。
+### 官方文档
+- [MySQL 官方文档](https://dev.mysql.com/doc/)
+- [Redis 官方文档](https://redis.io/documentation)
+- [MongoDB 官方文档](https://docs.mongodb.com/)
+- [PostgreSQL 官方文档](https://www.postgresql.org/docs/)
+
+### 学习资源
+- 《高性能 MySQL》
+- 《Redis 设计与实现》
+- 《MongoDB 权威指南》
+- 《PostgreSQL 实战》
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request 来帮助改进这个项目。在提交内容前，请确保：
+
+1. 内容准确且经过验证
+2. 提供完整的示例代码
+3. 保持文档格式统一
+4. 添加必要的参考资料
+
+## 📄 许可证
+
+本项目采用 Apache 2.0 许可证 - 详见 [LICENSE](../LICENSE) 文件
