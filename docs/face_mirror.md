@@ -1058,17 +1058,617 @@ sequenceDiagram
 
 ## 1、JVM虚拟机运行时数据区
 
+```mermaid
+classDiagram
+    class JVMRuntimeAreas {
+        <<JVM Runtime Data Areas>>
+    }
+
+    class ThreadSharedAreas {
+        <<Thread Shared>>
+        +Method Area
+        +Heap
+    }
+
+    class ThreadPrivateAreas {
+        <<Thread Private>>
+        +PC Register
+        +JVM Stack
+        +Native Method Stack
+    }
+
+    class MethodArea {
+        +Class Structures
+        +Runtime Constant Pool
+        +Field/Method Data
+        +Method Code
+    }
+
+    class Heap {
+        +Young Generation
+        ++Eden Space
+        ++Survivor 0
+        ++Survivor 1
+        +Old Generation
+    }
+
+    class JVMStack {
+        +Stack Frames
+        ++Local Variables
+        ++Operand Stack
+        ++Dynamic Linking
+        ++Return Address
+    }
+
+    JVMRuntimeAreas <|-- ThreadSharedAreas
+    JVMRuntimeAreas <|-- ThreadPrivateAreas
+    ThreadSharedAreas <|-- MethodArea
+    ThreadSharedAreas <|-- Heap
+    ThreadPrivateAreas <|-- PCRegister
+    ThreadPrivateAreas <|-- JVMStack
+    ThreadPrivateAreas <|-- NativeMethodStack
+
+```
+
+详细说明：
+
+1. ‌**线程共享区域（Thread Shared）**‌
+
+   - Method Area（方法区）
+
+     - 存储类元数据、常量池、方法代码等
+     - JDK8+称为Metaspace（使用本地内存）
+
+   - Heap（堆）
+
+     - 对象实例存储区域
+
+     - 分代结构：
+
+       ```mermaid
+       flowchart LR
+           Heap-->YoungGen
+           Heap-->OldGen
+           YoungGen-->Eden
+           YoungGen-->S0(Survivor 0)
+           YoungGen-->S1(Survivor 1)
+       ```
+
+2. ‌**线程私有区域（Thread Private）**‌
+
+   - PC Register（程序计数器）
+
+     - 当前线程执行的字节码行号指示器
+
+   - JVM Stack（虚拟机栈）
+
+     - 栈帧组成：
+
+       ```mermaid
+       flowchart TD
+           StackFrame-->LocalVars[Local Variables]
+           StackFrame-->OperandStack
+           StackFrame-->DynamicLinking
+           StackFrame-->ReturnAddress
+       ```
+
+   - Native Method Stack（本地方法栈）
+
+     - 服务于Native方法调用
+
+关键特性对比：
+
+| 区域        | 线程共享 | 内存回收 | 溢出类型           | 配置参数             |
+| ----------- | -------- | -------- | ------------------ | -------------------- |
+| Method Area | ✓        | ✓        | OutOfMemoryError   | -XX:MaxMetaspaceSize |
+| Heap        | ✓        | ✓        | OutOfMemoryError   | -Xmx/-Xms            |
+| JVM Stack   | ✗        | ✗        | StackOverflowError | -Xss                 |
+| PC Register | ✗        | ✗        | -                  | -                    |
+
 ## 2、基础知识点汇总
+
+### 2-1、语言特性与运行机制
+
+1. ‌**跨平台原理**‌
+   - 基于JVM实现"一次编译，到处运行"，不同平台需安装对应JVM
+   - 字节码文件（.class）通过JIT编译器动态转换为机器码
+2. ‌**核心特性**‌
+   - ‌**封装**‌：通过`private/protected`控制访问，隐藏实现细节
+   - ‌**继承**‌：`extends`实现类复用，支持单继承多实现
+   - ‌**多态**‌：包含编译时重载（Overload）和运行时重写（Override）
+   - ‌**抽象**‌：`abstract`类/方法定义规范，接口（`interface`）实现多继承
+
+------
+
+### 2-2、基础语法规范
+
+1. ‌**数据类型**‌
+
+   | 类型     | 说明                                                         | 示例               |
+   | -------- | ------------------------------------------------------------ | ------------------ |
+   | 基本类型 | 8种。整数型：byte（1字节）、short（2字节）、int（4字节）、long（8字节）<br />浮点型：float（4字节）、double（8字节）<br />字符型：char（2字节）<br />布尔型：boolean（1位） | a = 10;`           |
+   | 引用类型 | 类/接口/数组，数组当然是对象                                 | `String s = "Hi";` |
+   | 自动装箱 | 基本类型与包装类自动转换，有性能损失，勿频繁转换             | `Integer i = 100;` |
+
+2. ‌**运算符与流程控制**‌
+
+   - 三目运算符：`x = (a>b) ? a : b;`
+   - `switch`支持字符串和枚举（JDK12+支持表达式）
+   - 循环控制：`break`跳出循环，`continue`跳过本次迭代
+
+------
+
+### 2-3、面向对象编程OOP
+
+#### 2‌-3-1、**类与对象**‌
+
+```java
+public class Person {
+    private String name;  // 封装字段
+    public Person(String name) {  // 构造方法
+        this.name = name;
+    }
+    @Override  // 多态实现
+    public String toString() { 
+        return "Person:" + name;
+    }
+}
+```
+
+#### 2‌-3-2、**核心类库**‌
+
+- ‌**String**‌：不可变类，操作需用`StringBuilder`（线程不安全）或`StringBuffer`
+
+- ‌集合框架：
+
+  ```mermaid
+  classDiagram
+      class Collection {
+          <<interface>>
+          +add()
+          +remove()
+          +iterator()
+      }
+  
+      class List {
+          <<interface>>
+          +get(index)
+          +set(index, element)
+      }
+  
+      class Set {
+          <<interface>>
+          +unique elements
+      }
+  
+      class Queue {
+          <<interface>>
+          +offer()
+          +poll()
+      }
+  
+      class Deque {
+          <<interface>>
+          +addFirst()
+          +removeLast()
+      }
+  
+      class Map {
+          <<interface>>
+          +put(key, value)
+          +get(key)
+      }
+  
+      Collection <|-- List
+      Collection <|-- Set
+      Collection <|-- Queue
+      Queue <|-- Deque
+  
+      class ArrayList {
+          +Object[] elementData
+          +动态扩容机制
+          +随机访问O(1)
+      }
+  
+      class LinkedList {
+          +Node first/last
+          +双向链表结构
+          +插入删除O(1)
+      }
+  
+      class HashSet {
+          +HashMap 实例存储
+          +哈希冲突解决: 链表+红黑树
+      }
+  
+      class TreeSet {
+          +TreeMap 实例存储
+          +自然排序/Comparator
+      }
+  
+      class HashMap {
+          +Node[] table
+          +负载因子0.75
+          +树化阈值8
+      }
+  
+      class TreeMap {
+          +红黑树实现
+          +NavigableMap接口
+      }
+  
+      class ArrayDeque {
+          +循环数组实现
+          +无容量限制增长
+      }
+  
+      List <|.. ArrayList
+      List <|.. LinkedList
+      Set <|.. HashSet
+      Set <|.. TreeSet
+      Map <|.. HashMap
+      Map <|.. TreeMap
+      Deque <|.. ArrayDeque
+      Deque <|.. LinkedList
+  
+  ```
+
+------
+
+### 2-4、高级特性
+
+#### 2‌-4-1、**异常处理**‌
+
+| 异常类型      | 特点                                 |
+| ------------- | ------------------------------------ |
+| Checked异常   | 必须捕获（如IOException）            |
+| Unchecked异常 | 运行时异常（如NullPointerException） |
+
+#### 2‌-4-2、**多线程**‌
+
+- 创建方式：继承`Thread`或实现`Runnable`
+- 同步机制：`synchronized`关键字或`ReentrantLock`
+
+#### 2‌-4-3、**I/O操作**‌
+
+- 字节流：`InputStream/OutputStream`
+- 字符流：`Reader/Writer`（处理文本推荐）
+
+------
+
+### 2-5、关键补充
+
+1. ‌**内存管理**‌
+   - 堆存储对象实例，栈存储局部变量和方法调用
+   - 垃圾回收主要针对堆内存（分代收集算法）
+2. ‌**新版本特性**‌
+   - JDK17+：密封类（`sealed class`）、模式匹配
+   - JDK21：虚拟线程（轻量级线程）
+
+------
+
+学习路线建议
+
+1. ‌**基础阶段**‌：语法→OOP→集合→IO
+2. ‌**进阶阶段**‌：多线程→JVM→框架原理
+3. ‌**工具推荐**‌：IntelliJ IDEA（集成JDK）
+
+
 
 ## 3、数据结构
 
-### 4 、GC算法
+### 3-1、线性结构
+
+1. ‌**数组(Array)**‌
+   - 固定大小连续内存存储
+   - 随机访问O(1)，插入删除O(n)
+2. ‌**链表(Linked List)**‌
+   - 单向/双向/循环链表实现
+   - 插入删除O(1)，查询O(n)
+3. ‌**栈(Stack)**‌
+   - LIFO（后进先出）原则
+   - 应用：方法调用栈、括号匹配
+4. ‌**队列(Queue)**‌
+   - FIFO（先进先出）原则
+   - 变体：双端队列(Deque)、优先队列(PriorityQueue)
+5. ‌**哈希表(Hash Table)**‌
+   - 数组+链表+红黑树（JDK8+ HashMap结构）
+   - 平均查询O(1)，解决哈希冲突
+
+### 3-2、非线性结构
+
+1. ‌**树(Tree)**‌
+   - 二叉树、二叉搜索树(BST)
+   - 平衡树：AVL树、红黑树（TreeMap底层实现）
+   - 特殊结构：B树（数据库索引）、B+树、哈夫曼树
+2. ‌**堆(Heap)**‌
+   - 完全二叉树实现，分为大顶堆/小顶堆
+   - 应用：优先队列、TopK问题
+3. ‌**图(Graph)**‌
+   - 邻接矩阵/邻接表存储
+   - 应用：社交网络、路径规划
+
+### 3-3、Java集合框架实现
+
+| 接口    | 实现类        | 底层结构      |
+| ------- | ------------- | ------------- |
+| `List`  | ArrayList     | 动态数组      |
+|         | LinkedList    | 双向链表      |
+| `Set`   | HashSet       | 哈希表        |
+|         | TreeSet       | 红黑树        |
+| `Map`   | HashMap       | 哈希表+红黑树 |
+|         | TreeMap       | 红黑树        |
+| `Queue` | PriorityQueue | 堆            |
+| `Deque` | ArrayDeque    | 循环数组      |
+
+> 注：实际开发中优先使用Java集合框架的实现类，而非手动实现基础数据结构
+
+## 4 、GC算法
+
+### 4-1、GC核心原理
+
+#### 4‌-1-1、**基本机制**‌
+
+- 通过可达性分析算法（从GC Roots出发遍历对象引用链）标记存活对象
+- 自动回收不可达对象内存，避免手动释放导致的内存泄漏
+- 典型GC Roots包括：栈帧局部变量、静态变量、JNI引用等
+
+#### 4‌-1-2、**分代回收策略**‌
+
+```mermaid
+flowchart LR
+    Heap-->YoungGen[新生代]
+    Heap-->OldGen[老年代]
+    YoungGen-->Eden[Eden区]
+    YoungGen-->Survivor[Survivor区]
+    Survivor-->S0[From区]
+    Survivor-->S1[To区]
+```
+
+- 新生代采用复制算法（Minor GC），老年代采用标记-整理算法（Full GC）
+- 对象晋升规则：默认经历15次Minor GC存活则进入老年代
+
+### 4-2、关键算法演进
+
+| 算法类型  | 特点                     | 应用场景     |
+| --------- | ------------------------ | ------------ |
+| 标记-清除 | 产生内存碎片，适合老年代 | CMS收集器    |
+| 复制算法  | 空间利用率50%，但无碎片  | 新生代回收   |
+| 标记-整理 | 解决碎片问题，但耗时较长 | G1/ZGC收集器 |
+| 分代收集  | 结合不同算法优势         | 现代JVM默认  |
+
+### 4-3、主流垃圾收集器
+
+#### 4‌-3-1、**经典组合**‌
+
+- Serial + Serial Old：单线程模式，适合客户端应用
+- ParNew + CMS：并发标记清除，减少停顿时间
+
+#### 4‌-3-2、**新一代收集器**‌
+
+- ‌**G1**‌：JDK9默认，分Region收集，预测停顿时间
+- ‌**ZGC**‌：亚毫秒级停顿，支持TB级堆内存（JDK15+生产可用）
+- ‌**Shenandoah**‌：低延迟并发回收，与ZGC竞争
+
+### 4-4、性能调优实践
+
+#### 4‌-4-1、**关键参数**‌
+
+```java
+-Xmx4g  // 最大堆内存
+-Xms4g  // 初始堆内存
+-XX:NewRatio=2  // 新生代/老年代比例
+-XX:+UseG1GC  // 启用G1收集器
+```
+
+#### 4‌-4-2、**问题诊断**‌
+
+- ‌**频繁Full GC**‌：检查老年代内存泄漏或晋升阈值
+- ‌**长时间停顿**‌：切换低延迟收集器（如ZGC）
+- ‌**内存泄漏**‌：通过MAT分析对象引用链
+
+### 4-5、技术发展趋势
+
+1. ‌**无停顿收集**‌：ZGC/Shenandoah实现亚毫秒级停顿
+2. ‌**异构内存**‌：堆外内存与堆内存统一管理
+3. ‌**AI调优**‌：基于机器学习的自适应参数调整（JDK21+实验特性）
+
+
 
 # 五、消息队列
 
 ## 1、rabbitMQ
 
-轻量级消息队列系统
+​		轻量级消息队列系统，使用erlang语言编写，开始于信报行业异步传输消息，rabbitMQ 是一个开源的消息代理和队列服务器，用于在分布式系统之间异步传递消息。它实现了 ‌**AMQP（Advanced Message Queuing Protocol）**‌ 协议，并支持多种消息模式，如‌**点对点（P2P）**‌、‌**发布/订阅（Pub/Sub）**‌、‌**路由（Routing）**‌ 和 ‌**主题（Topic）**
+
+### ‌**1-1. RabbitMQ 核心概念**‌
+
+#### ‌**1-1-1、基本组件**‌
+
+| 组件                   | 说明                                     |
+| ---------------------- | ---------------------------------------- |
+| ‌**Producer（生产者）**‌ | 发送消息的应用                           |
+| ‌**Consumer（消费者）**‌ | 接收消息的应用                           |
+| ‌**Queue（队列）**‌      | 存储消息的缓冲区（FIFO）                 |
+| ‌**Exchange（交换机）**‌ | 接收生产者消息，并按规则路由到队列       |
+| ‌**Binding（绑定）**‌    | 定义 Exchange 和 Queue 的关系            |
+| ‌**Message（消息）**‌    | 包含 payload（数据）和 headers（元数据） |
+| ‌**Channel（通道）**‌    | 复用 TCP 连接的轻量级通信方式            |
+
+#### ‌**1-1-2、Exchange 类型**‌
+
+| 类型        | 说明                       | 适用场景             |
+| ----------- | -------------------------- | -------------------- |
+| ‌**Direct**‌  | 精确匹配 `routingKey`      | 点对点（P2P）        |
+| ‌**Fanout**‌  | 广播到所有绑定的队列       | 发布/订阅（Pub/Sub） |
+| ‌**Topic**‌   | 基于 `routingKey` 模式匹配 | 消息分类（如日志）   |
+| ‌**Headers**‌ | 基于消息头匹配             | 较少使用             |
+
+------
+
+### ‌**1-2. RabbitMQ 工作流程**‌
+
+1. ‌**Producer**‌ 发送消息到 ‌**Exchange**‌。
+2. ‌**Exchange**‌ 根据 ‌**Binding**‌ 规则决定消息路由到哪些 ‌**Queues**‌。
+3. ‌**Consumer**‌ 从 ‌**Queue**‌ 获取消息并处理。
+
+```mermaid
+graph LR
+    Producer --> Exchange
+    Exchange -->|Direct| Queue1
+    Exchange -->|Fanout| Queue2
+    Exchange -->|Topic| Queue3
+    Queue1 --> Consumer1
+    Queue2 --> Consumer2
+    Queue3 --> Consumer3
+```
+
+------
+
+### ‌**1-3. RabbitMQ 核心特性**‌
+
+#### ‌**1-3-1、消息可靠性**‌
+
+| 机制                    | 说明                                 |
+| ----------------------- | ------------------------------------ |
+| ‌**消息确认（ACK）**‌     | 消费者处理完消息后发送 ACK，否则重发 |
+| ‌**持久化（Durable）**‌   | 队列和消息持久化到磁盘，防止丢失     |
+| ‌**事务（Transaction）**‌ | 确保消息发送的原子性（性能较低）     |
+| ‌**Publisher Confirms**‌  | 生产者确认消息是否成功投递           |
+
+#### ‌**1-3-2、高级功能**‌
+
+| 功能                             | 说明                 |
+| -------------------------------- | -------------------- |
+| ‌**TTL（Time-To-Live）**‌          | 设置消息过期时间     |
+| ‌**Dead Letter Exchange（DLX）**‌  | 处理失败或超时的消息 |
+| ‌**Priority Queue**‌               | 优先级队列           |
+| ‌**RPC（Remote Procedure Call）**‌ | 请求-响应模式        |
+
+------
+
+### ‌**1-4、RabbitMQ 使用示例（Spring Boot）**‌
+
+‌**4.1 添加依赖**‌
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+```
+
+‌**4.2 配置 RabbitMQ**‌
+
+```yaml
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+```
+
+‌**4.3 发送消息（Producer）**‌
+
+```java
+@RestController
+public class MessageController {
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @PostMapping("/send")
+    public String sendMessage(@RequestParam String message) {
+        rabbitTemplate.convertAndSend("my-exchange", "my.routing.key", message);
+        return "Message sent!";
+    }
+}
+```
+
+‌**4.4 接收消息（Consumer）**‌
+
+```java
+@Component
+public class MessageListener {
+    @RabbitListener(queues = "my-queue")
+    public void receiveMessage(String message) {
+        System.out.println("Received: " + message);
+    }
+}
+```
+
+‌**4.5 配置 Exchange & Queue**‌
+
+```java
+@Configuration
+public class RabbitMQConfig {
+    @Bean
+    public TopicExchange myExchange() {
+        return new TopicExchange("my-exchange");
+    }
+
+    @Bean
+    public Queue myQueue() {
+        return new Queue("my-queue", true); // durable=true
+    }
+
+    @Bean
+    public Binding binding() {
+        return BindingBuilder.bind(myQueue())
+                .to(myExchange())
+                .with("my.routing.key");
+    }
+}
+```
+
+------
+
+### ‌**1-5. RabbitMQ vs Kafka vs RocketMQ**‌
+
+| 特性         | RabbitMQ           | Kafka            | RocketMQ         |
+| ------------ | ------------------ | ---------------- | ---------------- |
+| ‌**协议**‌     | AMQP               | 自定义协议       | 自定义协议       |
+| ‌**吞吐量**‌   | 中（万级 QPS）     | 高（百万级 QPS） | 高（十万级 QPS） |
+| ‌**延迟**‌     | 低（毫秒级）       | 中（秒级）       | 低（毫秒级）     |
+| ‌**持久化**‌   | 支持               | 支持             | 支持             |
+| ‌**适用场景**‌ | 实时消息、任务队列 | 日志、大数据流   | 金融、电商订单   |
+
+------
+
+### ‌**1-6. 常见问题**‌
+
+‌**Q1: 消息丢失怎么办？**‌
+
+- ‌**生产者**‌：使用 `publisher confirms` 确认消息投递。
+- ‌**Broker**‌：设置 `durable=true` 持久化队列和消息。
+- ‌**消费者**‌：手动 ACK，处理失败后重试或进入死信队列（DLX）。
+
+‌**Q2: 如何保证消息顺序？**‌
+
+- ‌**单队列单消费者**‌：确保消息按顺序消费。
+- ‌**Kafka/RocketMQ**‌ 更适合严格顺序场景。
+
+‌**Q3: 如何提高吞吐量？**‌
+
+- ‌**批量发送**‌（`batchSize` 配置）。
+- ‌**多消费者**‌（`prefetchCount` 优化）。
+- ‌**集群部署**‌（镜像队列）。
+
+------
+
+‌**总结**‌
+
+- ‌**RabbitMQ 适合**‌：实时消息、任务队列、微服务通信。
+- ‌**Kafka 适合**‌：日志收集、大数据流处理。
+- ‌**RocketMQ 适合**‌：金融级高可靠场景。
+
+‌**推荐学习资源**‌：
+
+- [RabbitMQ 官方文档](https://www.rabbitmq.com/documentation.html)
+- [Spring AMQP 文档](https://spring.io/projects/spring-amqp)
+
+
 
 ## 2、rocketMQ
 
@@ -1088,7 +1688,9 @@ sequenceDiagram
 
 # 六、常用框架解析
 
-## 1、Netty好，得学
+## 1、N
+
+## etty好，得学
 
 异步事件驱动的高性能网络通信应用框架，用于快速开发高性能、高可靠性的网络服务器、客户端程序。运用在各个框架组件上Dubbo、gRPC、springgateway、xxl-job等等
 
