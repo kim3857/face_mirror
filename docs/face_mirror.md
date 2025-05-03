@@ -1577,7 +1577,7 @@ graph LR
 
 ------
 
-### ‌**1-4、RabbitMQ 使用示例（Spring Boot）**‌
+### ‌1-4、RabbitMQ 使用示例（Spring Boot）
 
 ‌**4.1 添加依赖**‌
 
