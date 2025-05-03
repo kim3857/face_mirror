@@ -746,11 +746,11 @@ SET GLOBAL sync_binlog=100;  -- 组提交优化:ml-citation{ref="7" data="citati
 
 ## 4、Oracle
 
-## 一、基础概述
+### 4-1、基础概述
 
 Oracle数据库（Oracle Database）是由甲骨文公司(Oracle Corporation)开发的关系数据库管理系统(RDBMS)，目前最新版本为Oracle Database 23ai。作为全球领先的企业级数据库解决方案，Oracle以其卓越的性能、可靠性和安全性著称，被财富1000强企业广泛采用
 
-## 二、核心特性
+### 4-2、核心特性
 
 1. ‌**架构设计**‌：
 
@@ -791,7 +791,7 @@ Oracle数据库（Oracle Database）是由甲骨文公司(Oracle Corporation)开
    - 提供完整的数据泵(Data Pump)导入导出工具
    - 内置ASM(自动存储管理)和RAC(实时应用集群)等高可用方案
 
-   ## 四、技术组件
+   ### 4-3、技术组件
 
    1. ‌**核心模块**‌：
 
@@ -823,7 +823,7 @@ Oracle数据库（Oracle Database）是由甲骨文公司(Oracle Corporation)开
          - 主备库日志同步机制
          - 支持物理备库和逻辑备库两种模式
 
-   ## 五、应用领域
+   ### 4-4、应用领域
 
    1. ‌**企业级应用**‌：
       - 银行金融系统核心数据库
