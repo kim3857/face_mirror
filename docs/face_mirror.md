@@ -1702,25 +1702,418 @@ public class RabbitMQConfig {
 
 ## 2、rocketMQ
 
-百万级
+百万级消息队列系统，天然分布式高并发高可用，Java原生编写
 
-## 3、kafka
+### 2-1、核心架构与设计理念
+
+#### 2-1-1、四大核心组件
+
+```mermaid
+graph LR
+    P[Producer] -->|1.发送消息| B[Broker集群]
+    B -->|2.持久化存储| D[(存储系统)]
+    C[Consumer] -->|3.拉取消息| B
+    N[NameServer] -->|4.路由同步| P
+    N -->|5.路由同步| C
+
+```
+
+- 组件职责说明
+
+  1. ‌**Producer**‌
+     - 通过NameServer获取Broker路由信息
+     - 支持同步/异步/单向三种发送模式
+     - 默认采用轮询策略选择消息队列
+  2. ‌**Broker**‌
+     - 接收消息并持久化到CommitLog
+     - 维护消费队列(ConsumeQueue)索引
+     - 支持主从同步复制保证高可用
+  3. ‌**NameServer**‌
+     - 无状态路由注册中心
+     - 30秒心跳检测机制维护Broker列表
+     - 客户端每30秒主动拉取最新路由
+  4. ‌**Consumer**‌
+     - 支持集群/广播两种消费模式
+     - 采用长轮询机制拉取消息（默认5s超时）
+     - 消费进度(offset)持久化到Broker
+
+  关键交互时序
+
+  1. 启动阶段：Broker向所有NameServer注册路由信息
+  2. 生产阶段：Producer从NameServer获取Topic路由表→选择队列发送消息
+  3. 消费阶段：
+     - Consumer从NameServer获取Broker地址
+     - 向Master/Slave建立长连接拉取消息
+  4. 故障转移：NameServer检测Broker下线→通知客户端更新路由表
+
+#### 2-2-2、核心设计特性
+
+- ‌**消息存储模型**‌：
+
+  ```java
+  // 存储结构示例
+  commitlog/
+    00000000000000000000  // 主存储文件
+  consumequeue/
+    TopicA/0/00000000000000000000  // 消费队列索引
+  ```
+
+  - 顺序写+随机读设计（CommitLog+ConsumeQueue）
+  - 单机支持10万级TPS
+
+- ‌**消息投递保证**‌：
+
+  | 保证级别      | 实现机制               |
+  | ------------- | ---------------------- |
+  | At Least Once | 消费成功后才提交offset |
+  | Exactly Once  | 事务消息+幂等校验      |
+
+### 2-2、关键特性详解
+
+#### 2-2-1、消息类型
+
+```java
+// 发送不同类型消息示例
+// 普通消息
+producer.send(new Message("TopicTest", "TagA", "HelloWorld".getBytes()));
+
+// 延迟消息（支持18个固定级别）
+Message msg = new Message("TopicTest", "TagB", "DelayedMsg".getBytes());
+msg.setDelayTimeLevel(3);  // 10秒延迟:ml-citation{ref="2,4" data="citationList"}
+
+// 事务消息
+TransactionSendResult result = producer.sendMessageInTransaction(msg, null);
+
+// 顺序消息
+
+```
+
+#### 2-2-2、消费模式对比
+
+| 模式         | 实现方式                  | 适用场景     |
+| ------------ | ------------------------- | ------------ |
+| ‌**集群消费**‌ | 相同GroupID消费者分摊消息 | 业务消息处理 |
+| ‌**广播消费**‌ | 所有消费者接收全量消息    | 配置信息推送 |
+
+#### 2-2-3、消息过滤
+
+- ‌Tag过滤（服务端过滤）：
+
+  ```java
+  // 消费者只接收TagA或TagC的消息
+  consumer.subscribe("TopicTest", "TagA || TagC");
+  ```
+
+- ‌SQL92过滤（需Broker开启enablePropertyFilter）：
+
+  ```sql
+  a > 5 AND b = 'hello'
+  ```
+
+### 2-3、高可用设计
+
+#### 2-3-1、Broker部署模式
+
+| 模式     | 数据同步方式 | 故障转移时间 |
+| -------- | ------------ | ------------ |
+| 异步复制 | 主从异步复制 | 30秒级       |
+| 同步双写 | 主从同步刷盘 | 秒级         |
+
+#### 2-3-2、读写分离机制
+
+```mermaid
+sequenceDiagram
+    Producer->>Broker-Master: 写入消息
+    Broker-Master->>Broker-Slave: 同步数据
+    Consumer->>Broker-Slave: 拉取消息（SlaveReadEnable=true）
+```
+
+### 2-4、最佳实践
+
+#### 2-4-1、性能调优参数
+
+```properties
+# broker.conf 关键参数
+flushDiskType=ASYNC_FLUSH  # 异步刷盘（高性能）
+mapedFileSizeConsumeQueue=300000  # 消费队列文件大小(单位字节)
+useReentrantLockWhenPutMessage=true  # 高并发场景锁优化
+```
+
+#### 2-4-2、监控指标
+
+- ‌关键监控项：
+  - 堆积量（consumerOffset - minOffset）
+  - 写入/消费TPS
+  - 存储文件年龄（超过4小时报警）
+
+### 2-5、5.0版本新特性（2025）
+
+1. ‌**轻量级Proxy模式**‌：
+
+   ```bash
+   ./mqadmin proxy -n nameserver:9876 -p 8080
+   ```
+
+   - 分离计算与存储，支持K8s弹性扩缩容
+
+2. ‌**多语言SDK增强**‌：
+
+   - 支持gRPC协议通信
+   - 提供Rust/Go语言客户端
+
+3. ‌**流式处理增强**‌：
+
+   ```java
+   // 流式消费API
+   consumer.consumeStream((List<Message> msgs) -> {
+       msgs.forEach(msg -> process(msg));
+       return ConsumeResult.SUCCESS;
+   });
+   ```
+
+> 注：生产环境建议使用4.9+ LTS版本（截至2025年最新为5.0.2）
+
+## 3、Kafka
 
 千万级分布式事件流处理
 
-### 3-1 基本介绍
+### 3-1、核心架构与设计理念
 
-### 3-2 组件介绍
+1. 分布式消息系统架构
 
-### 3-3 使用场景
+```mermaid
+graph TD
+    P[Producer] -->|发布消息| B[Broker集群]
+    B -->|副本同步| B
+    C[Consumer Group] -->|订阅消息| B
+    Z[ZooKeeper] -->|集群协调| B
+```
+
+- ‌核心组件：
+  - ‌**Broker**‌：消息存储与处理节点（无主从区分）
+  - ‌**ZooKeeper**‌：集群元数据管理（Kafka 3.0+逐步移除依赖）
+  - ‌**Producer**‌：支持同步/异步发送
+  - ‌**Consumer**‌：基于消费者组的并行消费
+
+2. 核心设计特性
+
+- ‌**分区(Partition)机制**‌：
+
+  ```java
+  // 生产者指定分区策略
+  producer.send(new ProducerRecord<>(
+      "topic", 
+      partition,  // 显式指定分区
+      key,        // 相同key路由到同一分区
+      value
+  ));
+  ```
+
+  - 单个分区内消息有序
+  - 默认采用轮询策略分配分区
+
+- ‌**高吞吐原理**‌：
+
+  - 顺序磁盘I/O（比随机内存访问更快）
+  - 零拷贝(Zero-Copy)技术
+  - 批量发送与压缩
+
+### 3-2、关键特性详解
+
+1. 消息存储模型
+
+```bash
+# 日志文件结构示例
+/topic-0/
+   00000000000000000000.log  # 数据文件
+   00000000000000000000.index # 位移索引
+   00000000000000000000.timeindex # 时间索引
+```
+
+- ‌**分段(Segment)存储**‌：
+
+  - 默认1GB分段，过期数据自动删除
+  - 索引文件实现快速定位
+
+- ‌**保留策略**‌：
+
+  | 策略类型 | 配置参数                | 说明           |
+  | -------- | ----------------------- | -------------- |
+  | 时间保留 | log.retention.hours=168 | 默认保留7天25  |
+  | 大小保留 | log.retention.bytes=1GB | 总日志大小限制 |
+
+2. 消费模式对比
+
+| 模式               | 特点                                             |
+| ------------------ | ------------------------------------------------ |
+| ‌**消费者组模式**‌   | 同组消费者分摊分区（每个分区只被一个消费者消费） |
+| ‌**独立消费者模式**‌ | 每个消费者读取全量数据（适用于监控等场景）       |
+
+### 3-3、高可用设计
+
+1. 副本机制
+
+```mermaid
+graph LR
+    P[Producer] -->|Leader| B1[Broker1]
+    B1 -->|Follower| B2[Broker2]
+    B1 -->|Follower| B3[Broker3]
+```
+
+- ‌**ISR集合**‌（In-Sync Replicas）：
+
+  - 包含所有与Leader保持同步的副本
+  - 通过`replica.lag.time.max.ms`检测落后副本
+
+- ‌**选举策略**‌：
+
+  | 策略                        | 特点                                    |
+  | --------------------------- | --------------------------------------- |
+  | unclean.leader.enable=false | 只从ISR选举（默认）                     |
+  | unclean.leader.enable=true  | 允许非ISR副本成为Leader（可能丢失数据） |
+
+### 3-4、最佳实践
+
+1. 关键配置优化
+
+```properties
+# server.properties
+num.network.threads=8  # 网络线程数（建议核数+1）
+num.io.threads=32      # 磁盘IO线程数（建议3*核数）
+log.flush.interval.messages=10000  # 刷盘消息间隔
+socket.send.buffer.bytes=1024000    # 发送缓冲区大小
+```
+
+2. 监控指标
+
+- ‌核心监控项：
+  - 分区Leader分布均衡性
+  - 消费延迟（`consumer_lag`）
+  - 网络吞吐量（`bytes_in/bytes_out`）
+  - ISR波动次数（`under_replicated_partitions`）
+
+### 3-5、3.0+版本新特性（2025）
+
+1. ‌**KIP-500（移除ZooKeeper）**‌：
+
+   ```bash
+   # 启动自包含模式的Kafka
+   bin/kafka-storage.sh format -t $CLUSTER_ID -c config/kraft.properties
+   bin/kafka-server-start.sh config/kraft.properties
+   ```
+
+   - 采用KRaft协议实现自管理
+
+2. ‌**增量协作重平衡**‌：
+
+   - 消费者组再平衡时间缩短90%+
+   - 支持动态分区分配策略
+
+3. ‌**分层存储（Tiered Storage）**‌：
+
+   ```properties
+   # 配置远程存储
+   remote.storage.enable=true
+   remote.log.metadata.manager.class=org.apache.kafka.server.log.remote.storage.NoOpRemoteLogMetadataManager
+   ```
+
+   - 冷数据自动转存对象存储（如S3）
 
 ## 4、MQTT协议
 
+### 4-1、协议基础
+
+#### 4-1-1、核心定义
+
+MQTT（Message Queuing Telemetry Transport）是一种基于发布/订阅模式的轻量级通讯协议，构建于TCP/IP协议之上，由IBM于1999年开发。该协议专为硬件性能受限的远程设备和网络状况不佳的环境设计。
+
+#### 4-1-2、协议特点
+
+- ‌**极简设计**‌：最小报文仅2字节
+- ‌**低带宽消耗**‌：适合卫星链路等受限环境
+- ‌**异步通信**‌：发布者与订阅者完全解耦
+- ‌**QoS支持**‌：提供三种消息传递质量等级
+
+### 4-2、核心架构
+
+#### 4-2-1、 组件模型
+
+```mermaid
+graph LR
+    P[Publisher] -->|发布消息| B[Broker]
+    B -->|路由消息| S1[Subscriber1]
+    B -->|路由消息| S2[Subscriber2]
+```
+
+- ‌**Broker**‌：消息代理服务器，负责消息路由
+- ‌**Publisher**‌：消息发布客户端
+- ‌**Subscriber**‌：消息订阅客户端
+- ‌**Topic**‌：消息分类的层级标签（如"sensor/temp"）
+
+#### 4-2-2、通信流程
+
+1. 客户端与Broker建立TCP连接
+2. 订阅者订阅感兴趣的主题
+3. 发布者向主题发布消息
+4. Broker将消息推送给匹配的订阅者
+
+### 4-3、关键技术特性
+
+#### 4-3-1、服务质量等级(QoS)
+
+| 等级 | 保证程度 | 典型应用场景   |
+| ---- | -------- | -------------- |
+| QoS0 | 最多一次 | 环境传感器数据 |
+| QoS1 | 至少一次 | 设备状态更新   |
+| QoS2 | 恰好一次 | 金融交易场景   |
+
+#### 4-3-2、主题(Topic)设计
+
+- ‌**层级结构**‌：用"/"分隔（如"factory/device1/temp"）
+- ‌通配符：
+  - `+`：单级匹配（"+/temp"）
+  - `#`：多级匹配（"factory/#"）
+
+#### 4-3-3、安全机制
+
+- TLS/SSL加密传输
+- 用户名/密码认证
+- 客户端证书认证
+
+### 4-4、行业应用
+
+#### 4-4-1、典型应用场景
+
+- ‌**工业物联网**‌：石油管道遥测（原始应用场景）
+- ‌**电力系统**‌：变电站设备通信
+- ‌**航天领域**‌：星载系统消息交互
+- ‌**智能家居**‌：设备状态同步
+
+#### 4-4-2、实际部署案例
+
+- ‌**上海航天电子**‌：基于MQTT的星载应用系统，实现模块间低耦合通信
+- ‌**贵州电网**‌：变电站物联网设备MQTT协议自动化测试系统
+
+### 4-5、协议演进
+
+1. 版本发展
+
+- 1999：IBM首次发布
+- 2013：成为OASIS开放标准
+- 2019：MQTT 5.0发布（新增会话过期等特性）
+- 2024：MQTT 5.1.1成为ISO标准（ISO/IEC 20922）
+
+2. 2025年技术趋势
+
+- ‌**边缘计算集成**‌：轻量级Broker部署在边缘节点
+- ‌**协议扩展**‌：支持gRPC等新型传输层
+- ‌**AI增强**‌：智能主题路由优化
+
+
+
 # 六、常用框架解析
 
-## 1、N
-
-## etty好，得学
+## 1、Netty好，得学
 
 异步事件驱动的高性能网络通信应用框架，用于快速开发高性能、高可靠性的网络服务器、客户端程序。运用在各个框架组件上Dubbo、gRPC、springgateway、xxl-job等等
 
