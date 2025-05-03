@@ -1173,7 +1173,7 @@ classDiagram
    - 基于JVM实现"一次编译，到处运行"，不同平台需安装对应JVM
    - 字节码文件（.class）通过JIT编译器动态转换为机器码
 2. ‌**核心特性**‌
-   - ‌**封装**‌：通过`private/protected`控制访问，隐藏实现细节
+   - ‌**封装**‌：通过`private / protected / public / default`控制访问，隐藏实现细节
    - ‌**继承**‌：`extends`实现类复用，支持单继承多实现
    - ‌**多态**‌：包含编译时重载（Overload）和运行时重写（Override）
    - ‌**抽象**‌：`abstract`类/方法定义规范，接口（`interface`）实现多继承
@@ -1184,11 +1184,12 @@ classDiagram
 
 1. ‌**数据类型**‌
 
-   | 类型     | 说明                                                         | 示例               |
-   | -------- | ------------------------------------------------------------ | ------------------ |
-   | 基本类型 | 8种。整数型：byte（1字节）、short（2字节）、int（4字节）、long（8字节）<br />浮点型：float（4字节）、double（8字节）<br />字符型：char（2字节）<br />布尔型：boolean（1位） | a = 10;`           |
-   | 引用类型 | 类/接口/数组，数组当然是对象                                 | `String s = "Hi";` |
-   | 自动装箱 | 基本类型与包装类自动转换，有性能损失，勿频繁转换             | `Integer i = 100;` |
+   | 类型     | 说明                                                         | 示例                    |
+   | -------- | ------------------------------------------------------------ | ----------------------- |
+   | 基本类型 | 8种。整数型：byte（1字节）、short（2字节）、int（4字节）、long（8字节）<br />浮点型：float（4字节）、double（8字节）<br />字符型：char（2字节）<br />布尔型：boolean（1位） | a = 10;`                |
+   | 关键字   | final、static、this、super、transient、volatile、synchronized | final static int a = 0; |
+   | 引用类型 | 类/接口/数组，数组当然是对象                                 | `String s = "Hi";`      |
+   | 自动装箱 | 基本类型与包装类自动转换，有性能损失，勿频繁转换             | `Integer i = 100;`      |
 
 2. ‌**运算符与流程控制**‌
 
@@ -1324,6 +1325,31 @@ public class Person {
 | Checked异常   | 必须捕获（如IOException）            |
 | Unchecked异常 | 运行时异常（如NullPointerException） |
 
+1. 异常分类
+
+```mermaid
+graph TD
+    Throwable --> Error[不可恢复错误ERROR]
+    Throwable --> Exception
+    Exception --> RuntimeException[Unchecked]
+    Exception --> IOException[Checked]
+```
+
+2. 异常处理实践
+
+```java
+try {
+    Files.readAllBytes(Paths.get("file.txt"));
+} catch (IOException e) {  // 必须捕获的Checked异常
+    throw new MyAppException("Read failed", e);  // 异常链
+}
+
+// Unchecked异常（RuntimeException）通常不强制捕获
+if (obj == null) {
+    throw new NullPointerException("Object is null");
+}
+```
+
 #### 2‌-4-2、**多线程**‌
 
 - 创建方式：继承`Thread`或实现`Runnable`
@@ -1333,6 +1359,10 @@ public class Person {
 
 - 字节流：`InputStream/OutputStream`
 - 字符流：`Reader/Writer`（处理文本推荐）
+
+#### 2-4-4、泛型、反射、注解
+
+
 
 ------
 
