@@ -1,0 +1,27 @@
+{
+  "name": "face_mirror",
+  "version": "1.0.0",
+  "description": "<h1 align=\"center\">🪞 Face-Mirror · 面镜</h1> <p align=\"center\">一面照出知识短板与能力盲区的“照妖镜”，系统整理后端核心技术，助你升职加薪不再迷茫。</p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitcode.com:gcw_fDRVFVXe/face_mirror.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@vuepress/bundler-vite": "^2.0.0-rc.23",
+    "@vuepress/theme-default": "^2.0.0-rc.103",
+    "sass-embedded": "^1.87.0",
+    "vuepress": "^2.0.0-rc.23"
+  }
+}

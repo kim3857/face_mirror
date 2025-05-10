@@ -19,5 +19,12 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# VuePress 默认临时文件目录
+docs/.vuepress/.temp
+# VuePress 默认缓存目录
+docs/.vuepress/.cache
+# VuePress 默认构建生成的静态文件目录
+docs/.vuepress/dist
+# virtual machine crash logs, 
 hs_err_pid*
+node_modules/
