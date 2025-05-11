@@ -1491,6 +1491,29 @@ sequenceDiagram
 3. HTTP报文加密传输
 4. 会话恢复（Session ID/Tickets）
 
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+
+    Note over Client,Server: TLS Handshake Phase
+    Client->>Server: ClientHello<br>（支持的协议版本、加密套件列表、随机数）
+    Server->>Client: ServerHello<br>（选定的协议版本、加密套件、随机数）<br>Server Certificate（数字证书）
+    Note right of Server: 非对称加密开始<br>（RSA/ECDH算法）
+    Client->>Client: 验证证书有效性<br>（CA链校验+吊销列表检查）
+    Client->>Server: Premaster Secret<br>（客户端生成，用服务器公钥加密）
+    Server->>Server: 用私钥解密 Premaster Secret
+    Note over Client,Server: 双方通过随机数生成 Session Key<br>（AES-256-GCM 等对称密钥）
+
+    Note over Client,Server: Encrypted Communication Phase
+    Client->>Server: Application Data<br>（用 Session Key 对称加密）
+    Server->>Client: Application Data<br>（用 Session Key 对称解密+验证 MAC）
+    Note right of Server: 完整性和机密性保障<br>（AEAD 加密模式）
+
+```
+
+
+
 #### 4-4-2、性能优化技术
 
 | 技术名称          | 效果提升          | 实现原理               |
@@ -3501,9 +3524,11 @@ graph TD
 
 #### 2-1-3、分布式环境下的高并发
 
+整体后端架构
+
 和服务器物理资源有关
 
-和tomcat、jetty服务器有关
+和tomcat、jetty负载服务器有关
 
 和负载均衡策略有关
 
@@ -3513,11 +3538,59 @@ graph TD
 
 和具体业务场景有关
 
-### 2-2、分布式环境中的数据一致性
+#### 
 
 
 
-### 2-3、大数据量的存取问题
+### 2-2、大数据量的存取问题
+
+#### 2-2-1、单机数据库的局限
+
+
+
+#### 2-2-2、分布式数据库的突围
+
+
+
+#### 2-2-3、是否直接落库？
+
+
+
+#### 2-2-4、MQ异步平稳落库
+
+
+
+### 2-3、分布式环境中的数据一致性
+
+#### 2-3-1、数据的温床—磁盘
+
+常规数据。众所周知，访问磁盘和访问内存的速度不是一个数量级，在高并发环境下，响应时间有严格要求的，尽可能地短才是目标。数据存在磁盘上具备持久性，但同时带来了访问速度慢问题，在高并发下系统可能就当场崩了。所以，需要更快的速度访问。
+
+#### 2-3-2、数据的火炕—内存
+
+热点数据。内存是最接近CPU速度的外设，在访问内存时远远比访问磁盘速度快，所以高并发下，一些热点数据存放在内存上更能提高系统性能。
+
+#### 2-3-3、高并发下的问题
+
+并发度低时问题不够突出，高并发下数据不一致问题变得严重。遇到数据更新时，无法避免地遇到内存与数据库数据不一致问题，如何更新数据变得重要。
+
+1、先更新内存，再更新数据库
+
+2、先更新数据库，再更新内存
+
+秒杀活动中热点key（数十万用户抢十台iPhone 16场景）
+
+这个是典型的高并发请求到同一个key上，不论是单机还是分布式数据库，压力都很大（中小企业常规环境中，特别nb的数据库暂时不谈）。
+
+是否需要到内存->到数据库，一步处理到位？也不一定
+
+为什么不更新完内存后直接异步mq给消费者平稳消费到数据库中（最终一致性）
+
+这里有个问题，在更新内存时使用分布式缓存时，同样需要预防超卖问题。
+
+库存使用hash分桶，分散在Redis集群中，压力分散在各个节点上，对单个节点的压力就会减少很多
+
+换句话说，同时只能有一个人去
 
 
 
