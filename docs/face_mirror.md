@@ -3705,7 +3705,7 @@ graph LR
 
 
 
-# 九、经典算法
+# 九、经典算法与设计模式
 
 ## 1、算法分类与特性对比
 
@@ -3799,6 +3799,227 @@ F --> P
 
 
 
+
+## 5、常用设计模式
+
+### 5-1、单例模式
+
+**懒汉式（双检锁）**‌：延迟加载，通过 `volatile` 和 `synchronized` 保证线程安全
+
+```java
+public class LazySingleton {
+    private static volatile LazySingleton instance;
+    private LazySingleton() {}
+    public static LazySingleton getInstance() {
+        if (instance == null) {
+            synchronized (LazySingleton.class) {
+                if (instance == null) {
+                    instance = new LazySingleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+```
+
+**应用场景**‌：
+
+- Spring Boot 中的 Bean 默认以单例模式管理，确保全局唯一性。
+- 日志记录器、设备驱动管理等需要唯一实例的场景。
+
+‌**优缺点**‌：
+
+- ‌**优点**‌：减少内存开销，避免不一致状态。
+- ‌**缺点**‌：违反单一职责原则，扩展性差
+
+
+
+### 5-2、建造者模式
+
+**定义**‌：
+分步骤构造复杂对象，分离对象的构建与表示。适用于对象构造过程复杂且需灵活组合的场景（如生成报表、配置复杂参数）
+
+```java
+public class Computer {
+    private final String CPU;
+    private final String GPU;
+    // 其他可选参数...
+
+    public static class Builder {
+        private String CPU;
+        private String GPU;
+        // 其他参数的默认值或可选设置...
+
+        public Builder setCPU(String cpu) { 
+            this.CPU = cpu; 
+            return this; 
+        }
+        public Builder setGPU(String gpu) { 
+            this.GPU = gpu; 
+            return this; 
+        }
+        public Computer build() { 
+            return new Computer(this); 
+        }
+    }
+
+    private Computer(Builder builder) {
+        this.CPU = builder.CPU;
+        this.GPU = builder.GPU;
+    }
+}
+
+Computer pc = new Computer.Builder()
+                        .setCPU("Intel i7")
+                        .setGPU("NVIDIA RTX 4080")
+                        .build();
+
+```
+
+**应用场景**‌：
+
+- 配置文件解析（如 XML/JSON 转对象）。
+- 复杂业务对象组装（如订单包含商品、用户、支付信息等）。
+
+‌**优缺点**‌：
+
+- ‌**优点**‌：代码可读性高，支持分步构造和参数灵活性。
+- ‌**缺点**‌：代码量增加，需额外维护建造者类
+
+
+
+
+
+### 5-3、工厂模式
+
+**定义**‌：
+将对象的创建逻辑封装到工厂类中，客户端无需关注实例化细节。分为‌**简单工厂**‌、‌**工厂方法**‌和‌**抽象工厂**‌三种变体
+
+```java
+interface Payment { void pay(); }
+class AliPay implements Payment { public void pay() { ... } }
+class WechatPay implements Payment { public void pay() { ... } }
+
+interface PaymentFactory { Payment create(); }
+class AliPayFactory implements PaymentFactory { 
+    public Payment create() { return new AliPay(); } 
+}
+class WechatPayFactory implements PaymentFactory { 
+    public Payment create() { return new WechatPay(); } 
+}
+
+```
+
+- ‌**Spring 中的应用**‌：`BeanFactory` 根据配置动态创建 Bean 实例。
+
+‌**应用场景**‌：
+
+- 支付系统支持多种支付方式（如支付宝、微信、银行卡）。
+- 数据库连接池管理（根据配置选择不同数据库驱动）。
+
+‌**优缺点**‌：
+
+- ‌**优点**‌：解耦客户端与具体实现类，支持扩展新类型。
+- ‌**缺点**‌：每增加一个产品需新增工厂类，系统复杂度上升
+
+
+
+### **技术选型建议**‌
+
+- ‌**单例模式**‌：优先用于无状态工具类或资源管理类。
+- ‌**建造者模式**‌：当对象构造包含大量可选参数或需分步骤组装时使用。
+- ‌**工厂模式**‌：在需支持多态或动态切换实现类时选择
+
+### 5-4、策略者模式
+
+#### ‌**1. 模式定义与核心思想**‌
+
+- ‌**行为型设计模式**‌：定义一系列算法并将其封装为独立类，使它们可相互替换，客户端通过统一接口调用不同策略。
+- ‌核心目标：
+  - ‌**解耦算法与使用场景**‌：将算法实现从业务逻辑中剥离，避免代码因策略变动频繁修改。
+  - ‌**扩展性**‌：新增策略无需修改现有代码（符合开闭原则）。
+
+------
+
+#### ‌**2. 典型应用场景**‌
+
+| 场景             | 示例                                                         |
+| ---------------- | ------------------------------------------------------------ |
+| ‌**动态算法选择**‌ | 电商促销活动（满减、折扣、积分策略动态切换                   |
+| ‌**避免条件分支**‌ | 支付方式（支付宝、微信、银行卡）通过策略替换冗长的 `if-else` 判断 |
+| ‌**框架扩展点**‌   | Spring 中根据不同条件注入不同策略实现类（如多数据源路由）    |
+| ‌**多端渲染策略**‌ | 根据设备类型（PC、移动端）选择不同的 UI 渲染算法             |
+
+------
+
+#### ‌**3. 模式结构角色**‌
+
+| 角色           | 职责                                                         |
+| -------------- | ------------------------------------------------------------ |
+| ‌**策略接口**‌   | 定义算法的公共接口（如 `PaymentStrategy` 声明支付方法）78    |
+| ‌**具体策略类**‌ | 实现接口的具体算法（如 `AlipayStrategy`、`WeChatPayStrategy`）6 |
+| ‌**上下文类**‌   | 持有策略对象并调用其方法（如 `PaymentContext` 执行支付）     |
+
+#### **4. 实现步骤与示例**‌
+
+1. ‌**定义策略接口**‌：
+
+   ```java
+   public interface DiscountStrategy {
+       double applyDiscount(double price);  
+   }  
+   ```
+
+2. ‌**实现具体策略**‌：
+
+   ```java
+   // 满减策略  
+   public class FullReductionStrategy implements DiscountStrategy {
+       @Override  
+       public double applyDiscount(double price) {  
+           return price >= 200 ? price - 50 : price;  
+       }  
+   }  
+   ```
+
+3. ‌**上下文类调用策略**‌：
+
+   ```java
+   public class OrderContext {
+       private DiscountStrategy strategy;  
+   
+       public void setStrategy(DiscountStrategy strategy) {  
+           this.strategy = strategy;  
+       }  
+   
+       public double calculatePrice(double originalPrice) {  
+           return strategy.applyDiscount(originalPrice);  
+       }  
+   }  
+   ```
+
+#### **关键区别总结**‌
+
+| ‌**维度**‌     | ‌**策略模式**‌                           | ‌**工厂模式**‌                                 |
+| ------------ | -------------------------------------- | -------------------------------------------- |
+| ‌**模式类型**‌ | 行为型模式，动态选择算法。             | 创建型模式，统一创建对象。                   |
+| ‌**交互方式**‌ | 客户端显式设置策略并调用。             | 客户端通过工厂获取对象，无需关心实例化过程。 |
+| ‌**扩展性**‌   | 新增策略只需实现接口，无需修改上下文。 | 新增产品需修改工厂类或扩展子工厂。           |
+| ‌**适用原则**‌ | 开闭原则（对扩展开放，对修改关闭）。   | 单一职责原则（对象创建与使用分离）           |
+
+#### **结合使用场景**‌
+
+- ‌协同场景：策略模式中的策略对象可通过工厂模式动态创建。
+
+  ```java
+  // 结合工厂模式创建策略  
+  PaymentStrategy strategy = StrategyFactory.createStrategy("alipay");  
+  PaymentContext context = new PaymentContext();  
+  context.setStrategy(strategy);  
+  context.executePayment(100.0);
+  ```
 
 
 
